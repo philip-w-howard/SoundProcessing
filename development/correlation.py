@@ -93,7 +93,7 @@ def compute_correlations(left, right, samples_sep):
         print("Shift: ", shift, " correlation: ", ccv, " least squares: ", least_sq)
 
 ##################################################
-if __name__ == '__main__':
+def correlate_from_microphone():
     sample_rate = 44100      # samples / sec
     speed_of_sound = 34300.0 # cm/sec
     distance = 28.0          # cm separation between microphones
@@ -118,3 +118,18 @@ if __name__ == '__main__':
 #    compute_correlations(noisy_left, noisy_right, samples_sep)
     compute_correlations(left, right, samples_sep)
         
+##################################################
+def correlate_from_file():
+    filename = input("Enter filename: ")
+    max_offset = input("Max offset: ")
+
+    max_offset = int(max_offset)
+
+    data, rate = sf.read(filename)
+    left = data[:, 0]
+    right = data[:, 1]
+    
+    compute_correlations(left, right, 2*max_offset)
+##################################################
+if __name__ == '__main__':
+    correlate_from_file()
