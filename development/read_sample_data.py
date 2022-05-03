@@ -46,9 +46,9 @@ def get_file_size(dirname, filelist):
 # add a file to a list
 def add_file(data, ans, dir, subdir, file):
     name = dir + '/' + subdir + '/' + file
-    print('adding', name)
+#    print('adding', name)
     sample, rate = sf.read(name)
-    print("data", data.shape, "sample", sample.shape)
+#    print("data", data.shape, "sample", sample.shape)
     data = np.insert(data, 0, sample, axis=0)
     ans = np.insert(ans, 0, offset_from_name(subdir))
 
@@ -70,8 +70,9 @@ def read_dir(dirname, percent):
             filename = filelist[index][1].pop()
             train_data, train_ans = add_file(train_data, train_ans, dirname, filelist[index][0], filename)
 
+        print('len 0)', len(filelist[0][1]))
         for index in range(len(filelist)-1, -1, -1):
-            print('index', index, len(filelist))
+            #print('index', index, len(filelist[index][1]))
             #print('filelist[index]', filelist[index])
             if len(filelist[index][1]) == 0 :
                 print('popping', index)
