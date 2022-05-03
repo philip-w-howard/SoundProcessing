@@ -3,6 +3,7 @@ import numpy as np
 import wave
 import soundfile as sf
 import os
+import random
 
 g_dir_name = "sound_files"
 g_sample_rate = 44100
@@ -68,23 +69,27 @@ def read_dir(dirname, percent):
     while len(filelist) > 0:
         for index in range(len(filelist)):
             filename = filelist[index][1].pop()
-            train_data, train_ans = add_file(train_data, train_ans, dirname, filelist[index][0], filename)
+            value = random.random()
+            if value <= percent :
+                train_data, train_ans = add_file(train_data, train_ans, dirname, filelist[index][0], filename)
+            else:
+                test_data, test_ans = add_file(test_data, test_ans, dirname, filelist[index][0], filename)
+                
 
-        print('len 0)', len(filelist[0][1]))
+        print('remaining len:', len(filelist[0][1]))
         for index in range(len(filelist)-1, -1, -1):
-            #print('index', index, len(filelist[index][1]))
-            #print('filelist[index]', filelist[index])
             if len(filelist[index][1]) == 0 :
-                print('popping', index)
                 filelist.pop(index)
 
     return train_data, train_ans, test_data, test_ans
 
 ##################################################
 if __name__ == '__main__':
+    random.seed()
     dirname = input('directory: ')
     percent_training = input('percent_training: ')
     percent = float(percent_training)
 
     train_data, train_answers, val_data, val_answers = read_dir(dirname, percent)
-    print(train_data.shape, train_answers.shape)
+    print('training:', train_data.shape, train_answers.shape)
+    print('testing:', val_data.shape, val_answers.shape)
