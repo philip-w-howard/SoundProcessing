@@ -57,6 +57,7 @@ def add_file(data, ans, dir, subdir, file):
 
 # Build traning and validation sets
 def read_dir(dirname, percent):
+    random.seed()
     filelist = get_file_list(dirname)
     size = get_file_size(dirname, filelist)
 
@@ -85,7 +86,6 @@ def read_dir(dirname, percent):
 
 ##################################################
 if __name__ == '__main__':
-    random.seed()
     dirname = input('directory: ')
     percent_training = input('percent_training: ')
     percent = float(percent_training)

@@ -22,6 +22,16 @@ def write_file(filename, data, samplerate):
     print("Done")
 
 ##################################################
+def write_channels(filename, left, right, samplerate):
+    print("Writing sound file: " + filename)
+    clip_len = len(left)
+    sample = np.empty( (clip_len, 2) )
+    sample[:,0] = left
+    sample[:,1] = right
+    sf.write(filename, sample, samplerate, 'PCM_16')
+    print("Done")
+
+##################################################
 def read_file(filename):
     data, samplerate = sf.read(filename)
     return data, samplerate
@@ -85,38 +95,73 @@ def add_noise(sound, loudness):
 
 ##################################################
 def compute_correlations(left, right, samples_sep):
-    for shift in range(-(samples_sep // 2), samples_sep // 2 + 1):
+    max_ccv = -100000
+    max_ccv_index = -1
+    min_sq = 10000000
+    min_sq_index = -1
+    
+    for shift in range(-samples_sep, samples_sep + 1):
         left_shift = np.roll(left, shift)
         ccv = correlate(left_shift, right)
+        if abs(ccv) > max_ccv:
+            max_ccv = abs(ccv)
+            max_ccv_index = shift
+            
         least_sq = correlate_least_squares(left_shift, right)
+        if least_sq < min_sq:
+            min_sq = least_sq
+            min_sq_index = shift
         
-        print("Shift: ", shift, " correlation: ", ccv, " least squares: ", least_sq)
+        # print("Shift: ", shift, " correlation: ", ccv, " least squares: ", least_sq)
 
+    print("range: ", -samples_sep, samples_sep)
+    print("Max ccv:", max_ccv, max_ccv_index)
+    print("Min sq:", min_sq, min_sq_index)
+        
 ##################################################
 def correlate_from_microphone():
     sample_rate = 44100      # samples / sec
+    sample_rate = 16000
+    device = 15
+    channels = 6
     speed_of_sound = 34300.0 # cm/sec
-    distance = 28.0          # cm separation between microphones
+    distance = 6.35          # cm separation between microphones
+    distance = 20
     max_separation = sample_rate / speed_of_sound * distance # samples between microphones
     samples_sep = int(max_separation) + 1
 
+    ##############
+    # samples_sep = 50
+    ##############
+    
 #    data, sample_rate = read_file("voicerecorder.m4a")
 #    print("Size: ", len(data), " sample rate: ", sample_rate)
-    data = rec_audio(2.0, 1, 2, sample_rate)
+    data = rec_audio(2.0, device, channels, sample_rate)
     write_file('raw.wav', data, sample_rate)
 
     trimmed = get_interesting(data, 0.4, samples_sep)
-    write_file('trimmed.wav', trimmed, sample_rate)
+
+    one = trimmed[:, 1]
+    two = trimmed[:, 2]
+    three = trimmed[:, 3]
+    four = trimmed[:, 4]
+
+    #write_file('trimmed.wav', trimmed, sample_rate)
+    write_channels('trimmed.wav', one, three, sample_rate)
 
     print("Trimmed length: ", len(trimmed))    
-
-    left = trimmed[:, 0]
-    right = trimmed[:, 1]
 
 #    noisy_left = add_noise(left, 0.1)
 #    noisy_right = add_noise(right, 0.1)   
 #    compute_correlations(noisy_left, noisy_right, samples_sep)
-    compute_correlations(left, right, samples_sep)
+    print("\none vs two")
+    compute_correlations(one, two, samples_sep)
+        
+    print("\none vs three")
+    compute_correlations(one, three, samples_sep)
+        
+    print("\ntwo vs four")
+    compute_correlations(two, four, samples_sep)
         
 ##################################################
 def correlate_from_file():
@@ -132,4 +177,5 @@ def correlate_from_file():
     compute_correlations(left, right, 2*max_offset)
 ##################################################
 if __name__ == '__main__':
-    correlate_from_file()
+    #correlate_from_file()
+    correlate_from_microphone()
