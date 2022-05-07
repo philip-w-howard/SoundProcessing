@@ -160,8 +160,14 @@ def correlate_from_microphone():
     print("\none vs three")
     compute_correlations(one, three, samples_sep)
         
+    print("\ntwo vs three")
+    compute_correlations(two, three, samples_sep)
+        
     print("\ntwo vs four")
     compute_correlations(two, four, samples_sep)
+        
+    print("\nthree vs four")
+    compute_correlations(three, four, samples_sep)
         
 ##################################################
 def correlate_from_file():
