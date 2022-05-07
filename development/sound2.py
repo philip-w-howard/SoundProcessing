@@ -50,7 +50,7 @@ if __name__ == '__main__':
     sample_rate = 44100      # samples / sec
     sample_rate = 16000
     duration = 2.0
-    device = 15
+    device = 20
     channels = 6
     
     speed_of_sound = 34300.0 # cm/sec

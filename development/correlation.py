@@ -122,7 +122,7 @@ def compute_correlations(left, right, samples_sep):
 def correlate_from_microphone():
     sample_rate = 44100      # samples / sec
     sample_rate = 16000
-    device = 15
+    device = 20
     channels = 6
     speed_of_sound = 34300.0 # cm/sec
     distance = 6.35          # cm separation between microphones
