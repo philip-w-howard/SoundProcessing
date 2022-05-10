@@ -1,17 +1,20 @@
 # Correlation code
+from usb_4_mic_array.tuning import Tuning
+import usb.core
+import usb.util
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
 
 ##################################################
 def rec_audio(duration, device, channels, sample_rate):
-    print("Recording audio")
+#    print("Recording audio")
     data = sd.rec(int(duration*sample_rate), samplerate=sample_rate,
                   channels=channels, device=device)
 
     sd.wait()
 
-    print("Done recording")
+#    print("Done recording")
     
     return data;
 
@@ -114,18 +117,39 @@ def compute_correlations(left, right, samples_sep):
         
         # print("Shift: ", shift, " correlation: ", ccv, " least squares: ", least_sq)
 
-    print("range: ", -samples_sep, samples_sep)
-    print("Max ccv:", max_ccv, max_ccv_index)
-    print("Min sq:", min_sq, min_sq_index)
+    #print("range: ", -samples_sep, samples_sep)
+    #print("Max ccv:", max_ccv, max_ccv_index)
+    #print("Min sq:", min_sq, min_sq_index)
+
+    return [max_ccv, max_ccv_index, min_sq, min_sq_index]
         
 ##################################################
-def correlate_from_microphone():
-    sample_rate = 44100      # samples / sec
-    sample_rate = 16000
-    device = 20
+def pick_device():
+    devices = sd.query_devices()
+    for ii in range(len(devices)):
+        device = devices[ii]
+        if 'ReSpeaker' in device['name'] and  device['max_input_channels'] == 6:
+            return ii, device['default_samplerate']
+
+    return -1
+
+##################################################
+def doa():
+    dev = usb.core.find(idVendor=0x2886, idProduct=0x0018)
+ 
+    if dev:
+        Mic_tuning = Tuning(dev)
+        return Mic_tuning.direction
+
+    return -1
+
+##################################################
+def correlate_from_microphone(device, sample_rate):
+    #sample_rate = 44100      # samples / sec
+    #sample_rate = 16000
     channels = 6
     speed_of_sound = 34300.0 # cm/sec
-    distance = 6.35          # cm separation between microphones
+    distance = 6.5          # cm separation between microphones
     distance = 20
     max_separation = sample_rate / speed_of_sound * distance # samples between microphones
     samples_sep = int(max_separation) + 1
@@ -135,40 +159,35 @@ def correlate_from_microphone():
     ##############
     
 #    data, sample_rate = read_file("voicerecorder.m4a")
-#    print("Size: ", len(data), " sample rate: ", sample_rate)
-    data = rec_audio(2.0, device, channels, sample_rate)
-    write_file('raw.wav', data, sample_rate)
+#    print("device", device, "channels", channels, "rate", sample_rate)
+    
+    data = rec_audio(0.5, device, channels, sample_rate)
+    #write_file('raw.wav', data, sample_rate)
 
-    trimmed = get_interesting(data, 0.4, samples_sep)
-
+    #trimmed = get_interesting(data, 0.4, samples_sep)
+    trimmed = data
     one = trimmed[:, 1]
     two = trimmed[:, 2]
     three = trimmed[:, 3]
     four = trimmed[:, 4]
 
     #write_file('trimmed.wav', trimmed, sample_rate)
-    write_channels('trimmed.wav', one, three, sample_rate)
+    #write_channels('trimmed.wav', one, three, sample_rate)
 
-    print("Trimmed length: ", len(trimmed))    
+    #print("Trimmed length: ", len(trimmed))    
 
 #    noisy_left = add_noise(left, 0.1)
 #    noisy_right = add_noise(right, 0.1)   
 #    compute_correlations(noisy_left, noisy_right, samples_sep)
-    print("\none vs two")
-    compute_correlations(one, two, samples_sep)
-        
-    print("\none vs three")
-    compute_correlations(one, three, samples_sep)
-        
-    print("\ntwo vs three")
-    compute_correlations(two, three, samples_sep)
-        
-    print("\ntwo vs four")
-    compute_correlations(two, four, samples_sep)
-        
-    print("\nthree vs four")
-    compute_correlations(three, four, samples_sep)
-        
+    one_two = compute_correlations(one, two, samples_sep)        
+    one_three = compute_correlations(one, three, samples_sep)
+    one_four = compute_correlations(one, four, samples_sep)
+    two_three = compute_correlations(two, three, samples_sep)       
+    two_four = compute_correlations(two, four, samples_sep)
+    three_four= compute_correlations(three, four, samples_sep)
+
+    print(f'{one_two[1]:3d} {one_three[1]:3d} {one_four[1]:3d} {two_three[1]:3d}',
+          f'{two_four[1]:3d} {three_four[1]:3d} {doa():4d}')
 ##################################################
 def correlate_from_file():
     filename = input("Enter filename: ")
@@ -183,5 +202,9 @@ def correlate_from_file():
     compute_correlations(left, right, 2*max_offset)
 ##################################################
 if __name__ == '__main__':
+    device, rate = pick_device()
+    print('Running on device', device, 'at', rate, 'samples/sec')
+    
     #correlate_from_file()
-    correlate_from_microphone()
+    while True:
+        correlate_from_microphone(device, rate)
