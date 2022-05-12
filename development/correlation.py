@@ -179,15 +179,29 @@ def correlate_from_microphone(device, sample_rate):
 #    noisy_left = add_noise(left, 0.1)
 #    noisy_right = add_noise(right, 0.1)   
 #    compute_correlations(noisy_left, noisy_right, samples_sep)
-    one_two = compute_correlations(one, two, samples_sep)        
-    one_three = compute_correlations(one, three, samples_sep)
-    one_four = compute_correlations(one, four, samples_sep)
-    two_three = compute_correlations(two, three, samples_sep)       
-    two_four = compute_correlations(two, four, samples_sep)
-    three_four= compute_correlations(three, four, samples_sep)
+    for ii in range(0,5):
+        for jj in range(ii+1, 6):
+            corr = \
+                compute_correlations(trimmed[:, ii], trimmed[:, jj], samples_sep)
 
-    print(f'{one_two[1]:3d} {one_three[1]:3d} {one_four[1]:3d} {two_three[1]:3d}',
-          f'{two_four[1]:3d} {three_four[1]:3d} {doa():4d}')
+            print(f'{corr[1]:3d}', end=" ")
+    print(f'{doa():4d}')
+#    zero_two = compute_correlations(trimmed[:, 0], trimmed[:, 1], samples_sep)
+#    zero_three = compute_correlations(trimmed[:, 0], trimmed[:, 1], samples_sep)
+#    zero_four = compute_correlations(trimmed[:, 0], trimmed[:, 1], samples_sep)
+#    zero_five = compute_correlations(trimmed[:, 0], trimmed[:, 1], samples_sep)
+    
+    
+                
+#    one_two = compute_correlations(one, two, samples_sep)        
+#    one_three = compute_correlations(one, three, samples_sep)
+#    one_four = compute_correlations(one, four, samples_sep)
+#    two_three = compute_correlations(two, three, samples_sep)       
+#    two_four = compute_correlations(two, four, samples_sep)
+#    three_four= compute_correlations(three, four, samples_sep)
+
+#    print(f'{one_two[1]:3d} {one_three[1]:3d} {one_four[1]:3d} {two_three[1]:3d}',
+#          f'{two_four[1]:3d} {three_four[1]:3d} {doa():4d}')
 ##################################################
 def correlate_from_file():
     filename = input("Enter filename: ")
