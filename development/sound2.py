@@ -5,6 +5,17 @@ import numpy as np
 import wave
 import soundfile as sf
 
+##################################################
+def pick_device():
+    devices = sd.query_devices()
+    for ii in range(len(devices)):
+        device = devices[ii]
+        if 'ReSpeaker' in device['name'] and  device['max_input_channels'] == 6:
+            return ii, device['default_samplerate']
+
+    return -1
+
+###################################################
 def rec_audio(duration, device, channels, sample_rate):
     print("Recording audio")
     data = sd.rec(int(duration*sample_rate), samplerate=sample_rate,
