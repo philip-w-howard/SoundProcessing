@@ -1,10 +1,54 @@
 # Correlation code
+import math
 import numpy as np
 import correlation as corr
 import gcc_phat
 import respeaker
 import soundfiles
 
+##################################################
+# compute a correlation where large numbers (1) are good.
+def compute_doa(dist, corr_1_3, corr_2_4, rate=16000):
+    sound = 34300 # cm/sec
+    
+    delta_1_3 = corr_1_3 * sound / rate
+    delta_2_4 = corr_2_4 * sound / rate
+    delta_1_3 /= dist
+    delta_2_4 /= dist
+
+    if math.fabs(delta_1_3) > 1.3 or math.fabs(delta_2_4) > 1.3:
+        print("Deltas out of range", delta_1_3, delta_2_4)
+        return -1
+    if math.fabs(delta_1_3) > 1 :
+        delta_1_3 /= math.fabs(delta_1_3)
+        
+    if math.fabs(delta_2_4) > 1:
+        delta_2_4 /= math.fabs(delta_2_4)
+    
+    print(f'Deltas: {delta_1_3:5.3f} {delta_2_4:5.3f}', end=' ')
+    
+    angle_1_3 = math.degrees( math.acos(delta_1_3) )
+    angle_2_4 = math.degrees( math.acos(delta_2_4) )
+    
+    if angle_2_4 >= 0:
+        angle_1 = angle_1_3 - 45
+    else:
+        angle_1 = -angle_1_3 + 135
+        
+    if angle_1_3 >= 0:
+        angle_2 = -angle_2_4 + 135
+    else:
+        angle_2 = angle_2_4 - 135
+        
+    if angle_1 < 0:
+        angle_1 += 360
+    
+    if angle_2 < 0:
+        angle_2 += 360
+        
+    print(f'Angles: {angle_1_3:5.1f} {angle_2_4:5.1f} {angle_1:5.1f} {angle_2:5.1f}', end=' ')
+
+    return angle_1
 ##################################################
 def correlate_from_microphone(device, sample_rate):
     #sample_rate = 44100      # samples / sec
@@ -26,12 +70,24 @@ def correlate_from_microphone(device, sample_rate):
     data = soundfiles.rec_audio(0.5, device, channels, sample_rate)
     #write_file('raw.wav', data, sample_rate)
 
-    #trimmed = get_interesting(data, 0.4, samples_sep)
+    #trimmed = soundfiles.get_interesting(data, 0.8, samples_sep)
+    #if trimmed.shape[0] < 1000:
+    #    print("No signal")
+    #    return
+    #else:
+    #    print("size: ", data.shape[0], trimmed.shape[0])
+
     trimmed = data
     one = trimmed[:, 1]
     two = trimmed[:, 2]
     three = trimmed[:, 3]
     four = trimmed[:, 4]
+
+    avg = np.average(one * one)
+    if avg < 1.0e-6:
+        print("No signal")
+        return
+    #print("Average:", avg)
 
     #write_file('trimmed.wav', trimmed, sample_rate)
     #write_channels('trimmed.wav', one, three, sample_rate)
@@ -65,8 +121,17 @@ def correlate_from_microphone(device, sample_rate):
     two_four = corr.compute_correlations(two, four, samples_sep)
     three_four= corr.compute_correlations(three, four, samples_sep)
 
-    print(f'{one_two[1]:3d} {one_three[1]:3d} {one_four[1]:3d} {two_three[1]:3d}',
-          f'{two_four[1]:3d} {three_four[1]:3d} {respeaker.doa():4d}')
+    gcc_1_2,c = gcc_phat.gcc_phat(one, two)
+    gcc_1_3,c = gcc_phat.gcc_phat(one, three)
+    gcc_2_4,c = gcc_phat.gcc_phat(two, four)
+
+    angle = compute_doa(6.42, gcc_1_3, gcc_2_4)
+    if angle >= 0:
+        print(f'{one_two[1]:3d} {gcc_1_2:7.3f} {one_three[1]:3d} {gcc_1_3:7.3f}' ,
+          f'{two_four[1]:3d} {gcc_2_4:7.3f} {respeaker.doa():4d}',
+          f'{angle:5.1f}')
+#    print(f'{one_two[1]:3d} {one_three[1]:3d} {one_four[1]:3d} {two_three[1]:3d}',
+#          f'{two_four[1]:3d} {three_four[1]:3d} {respeaker.doa():4d}')
 ##################################################
 def correlate_from_file():
     filename = input("Enter filename: ")

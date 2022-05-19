@@ -46,10 +46,13 @@ def get_interesting(sound, threshold, border):
     #find the bounds
     index = 0
     start = -1
-    end = sound.shape[0]
+    end = 0
+
+    volume = sound * sound
+    thres = threshold * threshold
     
-    for value in sound:
-        if value.max() >= threshold:
+    for value in volume:
+        if value.max() >= thres:
             if start == -1:
                 start = index
             end = index
